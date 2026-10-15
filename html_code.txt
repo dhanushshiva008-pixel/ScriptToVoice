@@ -1,0 +1,79 @@
+HTML = """
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScriptToVoice</title>
+<style>
+body{margin:0;padding:20px;background:#10131c;color:white;font-family:Arial,sans-serif}
+.container{max-width:520px;margin:auto}
+h1{color:#65d9ff}
+textarea,select,button{width:100%;box-sizing:border-box;padding:14px;margin:10px 0;border-radius:10px;font-size:16px}
+textarea,select{background:#202637;color:white;border:1px solid #414b65}
+textarea{min-height:180px}
+button{background:#1689e8;color:white;border:0;font-weight:bold}
+.note{color:#bdc6d8;font-size:14px}
+audio{width:100%;margin-top:16px}
+a{color:#65d9ff}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎙️ ScriptToVoice</h1>
+<p>మీ స్క్రిప్ట్‌ను వాయిస్‌గా మార్చుకోండి.</p>
+<textarea id="script" maxlength="5000" placeholder="మీ కథనం ఇక్కడ టైప్ చేయండి..."></textarea>
+<label>వాయిస్ ఎంచుకోండి</label>
+<label for="narration">కథనం శైలి ఎంచుకోండి</label>
+<select id="narration">
+<option value="mythology">🎬 పురాణ కథనం</option>
+<option value="normal">📖 సాధారణ కథనం</option>
+</select>
+<select id="voice">
+{% for id, label in voices.items() %}
+<option value="{{ id }}">{{ label }}</option>
+{% endfor %}
+</select>
+<button id="generate" onclick="generateVoice()">🎙️ వాయిస్ తయారు చేయండి</button>
+<p id="status" class="note">స్క్రిప్ట్ రాసి వాయిస్ తయారు చేయండి.</p>
+<audio id="player" controls hidden></audio>
+<p><a id="download" hidden download="ScriptToVoice.mp3">⬇️ MP3 డౌన్‌లోడ్ చేసుకోండి</a></p>
+<p class="note">వాయిస్ తయారీకి ఇంటర్నెట్ అవసరం. ఉచిత ఆన్‌లైన్ సేవ లభ్యత మారవచ్చు.</p>
+</div>
+<script>
+async function generateVoice(){
+  const script=document.getElementById('script').value.trim();
+  const voice=document.getElementById('voice').value;
+  const narration=document.getElementById('narration').value;
+  const status=document.getElementById('status');
+  const button=document.getElementById('generate');
+  const player=document.getElementById('player');
+  const download=document.getElementById('download');
+  if(!script){status.textContent='ముందుగా మీ స్క్రిప్ట్ టైప్ చేయండి.';return;}
+  button.disabled=true;
+  status.textContent='వాయిస్ తయారవుతోంది. దయచేసి వేచి ఉండండి...';
+  player.hidden=true;
+  download.hidden=true;
+  try{
+    const response=await fetch('/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({script:script,voice:voice,narration:narration})
+    });
+    const data=await response.json();
+    if(!response.ok) throw new Error(data.error||'వాయిస్ తయారు కాలేదు.');
+    player.src=data.url;
+    player.hidden=false;
+    download.href=data.url;
+    download.hidden=false;
+    status.textContent='వాయిస్ తయారైంది! వినండి లేదా MP3 డౌన్‌లోడ్ చేసుకోండి.';
+  }catch(error){
+    status.textContent='సమస్య: '+error.message;
+  }finally{
+    button.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
+"""
